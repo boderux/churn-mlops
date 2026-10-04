@@ -107,6 +107,32 @@ jobs:
             }
           }
           $global:LASTEXITCODE = 0
+          
+      - name: Deploy Local Docker Container (Port 8000)
+        run: |
+          $tag = "${{ steps.meta.outputs.tag }}"
+          $containerName = "churn-api-local"
+          $hostPort = 8000
+          $containerPort = 8000 # Đổi thành port app expose trong Dockerfile nếu khác (ví dụ: 80 hoặc 5000)
+
+          Write-Host "Stopping and removing old container if exists..."
+          docker rm -f $containerName 2>$null
+
+          Write-Host "Running new container $containerName on port $hostPort..."
+          docker run -d `
+            --name $containerName `
+            --restart unless-stopped `
+            -p "${hostPort}:${containerPort}" `
+            "${{ env.IMAGE }}:$tag"
+
+          Start-Sleep -Seconds 5
+          $isRunning = docker ps --filter "name=$containerName" --filter "status=running" -q
+          if (-not $isRunning) {
+            Write-Error "Container failed to stay running! Checking logs:"
+            docker logs $containerName
+            exit 1
+          }
+          Write-Host "Container $containerName is running successfully on port $hostPort."
 
   bump-manifest:
     name: Bump Overlay & GitOps Sync
