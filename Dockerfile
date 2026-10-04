@@ -1,11 +1,12 @@
 # syntax=docker/dockerfile:1.7
 # ---------- Stage 1: build the virtualenv ----------
 FROM python:3.11-slim-bookworm AS builder
-ENV PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1
+ENV PIP_NO_CACHE_DIR=1 PIP_DISABLE_PIP_VERSION_CHECK=1 PIP_DEFAULT_TIMEOUT=1000
 WORKDIR /build
 COPY requirements.txt .
 RUN --mount=type=cache,target=/root/.cache/pip \
-    python -m venv /opt/venv && /opt/venv/bin/pip install -r requirements.txt
+    python -m venv /opt/venv && \
+    /opt/venv/bin/pip install --retries 10 --default-timeout 1000 -r requirements.txt
 
 # ---------- Stage 2: minimal, non-root runtime ----------
 FROM python:3.11-slim-bookworm AS runtime
