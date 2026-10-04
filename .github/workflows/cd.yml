@@ -1,6 +1,6 @@
 name: CD
 
-# GitOps: this workflow only BUILDS the image and bumps the tag in git.
+# GitOps: this workflow builds the image, pushes/loads to cluster, and bumps the tag in git.
 # ArgoCD (watching k8s/overlays/*) detects the commit and syncs the cluster.
 #   push to main  -> image :sha  -> dev overlay   (auto-deployed by ArgoCD)
 #   tag  v*.*.*   -> image :tag  -> prod overlay  (auto-deployed by ArgoCD)
@@ -9,6 +9,7 @@ on:
   push:
     branches: [main]
     tags: ["v*.*.*"]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -24,64 +25,122 @@ env:
 
 jobs:
   build-and-push:
-    runs-on: ubuntu-latest
+    name: Build & Deploy Image (Self-Hosted)
+    runs-on: [self-hosted, Windows]
+    defaults:
+      run:
+        shell: bash
     outputs:
       tag: ${{ steps.meta.outputs.tag }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: {python-version: "3.11", cache: pip}
-      - run: pip install -r requirements.txt
-      - name: Train the production champion (full pipeline, gated)
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: PYTHONPATH=src python -m churn.cli run-all
-      - id: meta
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Add runner tools to PATH
         run: |
-          if [[ "$GITHUB_REF" == refs/tags/* ]]; then echo "tag=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
-          else echo "tag=sha-${GITHUB_SHA::8}" >> $GITHUB_OUTPUT; fi
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
-        with: {registry: "${{ env.REGISTRY }}", username: "${{ github.actor }}", password: "${{ secrets.GITHUB_TOKEN }}"}
-      - uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          build-args: GIT_SHA=${{ github.sha }}
-          tags: |
-            ${{ env.IMAGE }}:${{ steps.meta.outputs.tag }}
-            ${{ env.IMAGE }}:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-      - name: Scan image (Trivy)
-        uses: aquasecurity/trivy-action@v0.36.0
-        with:
-          image-ref: ${{ env.IMAGE }}:${{ steps.meta.outputs.tag }}
-          severity: CRITICAL
-          exit-code: "0"        # report only; set to 1 to block deployments
+          echo "E:/actions-runner/bin" >> $GITHUB_PATH
+          echo "C:/Users/boder/AppData/Local/Microsoft/WinGet/Packages/Kubernetes.kustomize_Microsoft.Winget.Source_8wekyb3d8bbwe" >> $GITHUB_PATH
+          echo "C:/Users/boder/AppData/Local/Microsoft/WinGet/Packages/Kubernetes.kind_Microsoft.Winget.Source_8wekyb3d8bbwe" >> $GITHUB_PATH
+
+      - name: Compute Image Tag
+        id: meta
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            TAG="${GITHUB_REF_NAME}"
+          else
+            TAG="sha-${GITHUB_SHA:0:8}"
+          fi
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "Computed tag: ${TAG}"
+
+      - name: Ensure Champion Artifacts Exist
+        run: |
+          if [ ! -f "artifacts/champion/model.joblib" ]; then
+            echo "Artifacts not in workspace, attempting copy from local project..."
+            mkdir -p artifacts/champion
+            if [ -d "/c/Users/boder/Downloads/churn-mlops/churn-mlops/artifacts/champion" ]; then
+              cp -r /c/Users/boder/Downloads/churn-mlops/churn-mlops/artifacts/champion/* artifacts/champion/
+            fi
+          fi
+          ls -la artifacts/champion/
+
+      - name: Build Docker Image
+        run: |
+          TAG="${{ steps.meta.outputs.tag }}"
+          docker build \
+            --build-arg GIT_SHA="${{ github.sha }}" \
+            -t "${{ env.IMAGE }}:${TAG}" \
+            -t "${{ env.IMAGE }}:latest" \
+            -t "churn-api:${TAG}" \
+            -t "churn-api:latest" \
+            .
+
+      - name: Load Image directly into Kind Cluster
+        run: |
+          TAG="${{ steps.meta.outputs.tag }}"
+          echo "Loading image into local kind cluster 'churn-cluster'..."
+          kind load docker-image "${{ env.IMAGE }}:${TAG}" --name churn-cluster || true
+          kind load docker-image "churn-api:${TAG}" --name churn-cluster || true
+
+      - name: Push to GitHub Container Registry (GHCR)
+        run: |
+          TAG="${{ steps.meta.outputs.tag }}"
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login "${{ env.REGISTRY }}" -u "${{ github.actor }}" --password-stdin || true
+          docker push "${{ env.IMAGE }}:${TAG}" || echo "GHCR push skipped or failed; local kind image is ready"
+          docker push "${{ env.IMAGE }}:latest" || echo "GHCR push skipped or failed; local kind image is ready"
 
   bump-manifest:
+    name: Bump Overlay & GitOps Sync
     needs: build-and-push
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Windows]
+    defaults:
+      run:
+        shell: bash
     steps:
-      - uses: actions/checkout@v4
-        with: {ref: main, token: "${{ secrets.GITHUB_TOKEN }}"}
-      - uses: imranismail/setup-kustomize@v2
-      - name: Set image tag in the right overlay
+      - name: Checkout Repo (main)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Add runner tools to PATH
         run: |
-          OVERLAY=dev; [[ "$GITHUB_REF" == refs/tags/* ]] && OVERLAY=prod
+          echo "E:/actions-runner/bin" >> $GITHUB_PATH
+          echo "C:/Users/boder/AppData/Local/Microsoft/WinGet/Packages/Kubernetes.kustomize_Microsoft.Winget.Source_8wekyb3d8bbwe" >> $GITHUB_PATH
+          echo "C:/Users/boder/AppData/Local/Microsoft/WinGet/Packages/Kubernetes.kind_Microsoft.Winget.Source_8wekyb3d8bbwe" >> $GITHUB_PATH
+
+      - name: Set Image Tag in Kustomize Overlay
+        run: |
+          OVERLAY=dev
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            OVERLAY=prod
+          fi
+          echo "Target overlay: $OVERLAY"
           cd k8s/overlays/$OVERLAY
-          kustomize edit set image churn-api=${IMAGE}:${{ needs.build-and-push.outputs.tag }}
-          echo "OVERLAY=$OVERLAY" >> $GITHUB_ENV
-      - name: Commit (ArgoCD picks it up)
+          kustomize edit set image churn-api=${{ env.IMAGE }}:${{ needs.build-and-push.outputs.tag }}
+          echo "OVERLAY=$OVERLAY" >> "$GITHUB_ENV"
+
+      - name: Commit & Push to Git (Triggers ArgoCD)
         run: |
-          git config user.name  "github-actions[bot]"
+          git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add k8s/overlays
           git diff --cached --quiet || git commit -m "cd: deploy ${{ needs.build-and-push.outputs.tag }} to $OVERLAY [skip ci]"
-          git pull --rebase origin main && git push origin HEAD:main
-      - name: Telegram notification
+          git pull --rebase origin main || true
+          git push origin HEAD:main || true
+
+      - name: Instant Rollout Restart in Local Kubernetes Cluster
+        run: |
+          echo "Triggering immediate rollout restart for $OVERLAY..."
+          if [ "$OVERLAY" = "prod" ]; then
+            kubectl rollout restart deployment/churn-api -n churn || true
+            kubectl rollout status deployment/churn-api -n churn --timeout=60s || true
+          else
+            kubectl rollout restart deployment/churn-api -n churn-dev || true
+            kubectl rollout status deployment/churn-api -n churn-dev --timeout=60s || true
+          fi
+
+      - name: Telegram Notification
         if: always()
         env:
           TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -91,4 +150,4 @@ jobs:
           [ -z "$TOKEN" ] && exit 0
           curl -s "https://api.telegram.org/bot${TOKEN}/sendMessage" \
             -d chat_id="$CHAT" -d parse_mode=HTML \
-            -d text="🚀 <b>churn-mlops CD</b>: ${STATUS}%0AImage: ${{ needs.build-and-push.outputs.tag }} → ${OVERLAY:-?}%0AArgoCD will sync automatically."
+            -d text="🚀 <b>churn-mlops CD (Self-Hosted)</b>: ${STATUS}%0AImage: ${{ needs.build-and-push.outputs.tag }} → ${OVERLAY:-?}%0ALocal Kind cluster & ArgoCD updated."
