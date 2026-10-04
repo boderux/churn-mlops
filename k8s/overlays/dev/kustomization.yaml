@@ -24,4 +24,4 @@ patches:
 images:
 - name: churn-api
   newName: ghcr.io/boderux/churn-api
-  newTag: sha-82b589fc
+  newTag: sha-13423e8f
