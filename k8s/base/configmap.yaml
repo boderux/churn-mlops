@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: churn-api-config
+data:
+  LOG_LEVEL: "INFO"
+  LOG_PREDICTIONS: "true"
+  PREDICTION_LOG: "/app/artifacts/runtime/prediction_log.jsonl"

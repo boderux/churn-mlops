@@ -1,0 +1,14 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: churn
+  namespace: argocd
+spec:
+  description: Churn MLOps project
+  sourceRepos:
+    - https://github.com/your-org/churn-mlops.git
+  destinations:
+    - {server: https://kubernetes.default.svc, namespace: churn}
+    - {server: https://kubernetes.default.svc, namespace: churn-dev}
+  clusterResourceWhitelist:
+    - {group: "", kind: Namespace}

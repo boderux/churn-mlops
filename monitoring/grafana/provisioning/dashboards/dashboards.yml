@@ -1,0 +1,7 @@
+apiVersion: 1
+providers:
+  - name: churn
+    folder: Churn MLOps
+    type: file
+    options:
+      path: /var/lib/grafana/dashboards

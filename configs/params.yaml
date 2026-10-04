@@ -1,0 +1,40 @@
+# Single source of truth for the pipeline (versioned in git).
+data:
+  url: https://raw.githubusercontent.com/IBM/telco-customer-churn-on-icp4d/master/data/Telco-Customer-Churn.csv
+  raw_path: data/raw/telco_churn.csv
+  processed_dir: data/processed
+  target: Churn
+  id_column: customerID
+  test_size: 0.2
+  random_state: 42
+  allow_synthetic_fallback: true   # offline / CI fallback
+
+features:
+  sensitive_attributes: [gender, SeniorCitizen]   # analysed in fairness report
+  drop_from_model: [gender]                         # fairness through unawareness
+
+training:
+  cv_folds: 5
+  n_iter: 8                  # RandomizedSearch iterations per model
+  scoring: roc_auc
+  experiment_name: churn-prediction
+  registered_model_name: churn-model
+  models: [logreg, random_forest, xgboost]
+
+gate:                         # model validation gate before promotion
+  min_roc_auc: 0.78
+  min_recall: 0.55
+  max_regression: 0.01        # allowed AUC drop vs. current champion
+
+monitoring:
+  drift_share_threshold: 0.30       # share of drifted columns -> alert + retrain
+  min_current_rows: 100
+  prediction_log: artifacts/prediction_log.jsonl
+  reports_dir: artifacts/reports
+  pushgateway_url: ""               # overridden by env PUSHGATEWAY_URL
+
+storage:
+  data_bucket: churn-data
+  reports_bucket: churn-reports
+  artifacts_bucket: churn-artifacts
+  mlflow_bucket: mlflow

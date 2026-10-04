@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: churn-api-dev
+  namespace: argocd
+  annotations:
+    # Telegram notifications (see notifications-cm.yaml); replace with your chat id
+    notifications.argoproj.io/subscribe.on-sync-succeeded.telegram: "-1001234567890"
+    notifications.argoproj.io/subscribe.on-sync-failed.telegram: "-1001234567890"
+    notifications.argoproj.io/subscribe.on-health-degraded.telegram: "-1001234567890"
+  finalizers: [resources-finalizer.argocd.argoproj.io]
+spec:
+  project: churn
+  source:
+    repoURL: https://github.com/your-org/churn-mlops.git
+    targetRevision: main
+    path: k8s/overlays/dev
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: churn-dev
+  syncPolicy:
+    automated: {prune: true, selfHeal: true}     # fully automatic CD to dev
+    syncOptions: [CreateNamespace=true]
+    retry: {limit: 3, backoff: {duration: 10s, factor: 2, maxDuration: 3m}}

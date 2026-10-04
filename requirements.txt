@@ -1,0 +1,24 @@
+# ---- Core ML ----
+numpy==1.26.4
+pandas==2.2.2
+scikit-learn==1.5.2
+xgboost==2.1.1
+joblib==1.4.2
+pyyaml==6.0.2
+matplotlib==3.9.2
+# ---- Experiment tracking ----
+mlflow-skinny==2.16.2
+# ---- Object storage / S3 / MinIO ----
+boto3==1.35.36
+# ---- Responsible AI ----
+shap==0.46.0
+lime==0.2.0.1
+fairlearn==0.10.0
+# ---- Monitoring ----
+evidently==0.4.40
+prometheus-client==0.21.0
+# ---- Serving ----
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+pydantic==2.9.2
+requests==2.32.3

@@ -1,0 +1,80 @@
+{
+  "global_top_features": {
+    "Contract_Month-to-month": 0.5679,
+    "tenure": 0.3514,
+    "InternetService_Fiber optic": 0.2934,
+    "OnlineSecurity_No": 0.2089,
+    "Contract_Two year": 0.1717,
+    "PaymentMethod_Electronic check": 0.1639,
+    "MonthlyCharges": 0.1454,
+    "TechSupport_No": 0.1361,
+    "charge_ratio": 0.1298,
+    "PaperlessBilling_No": 0.0926
+  },
+  "local_shap": [
+    {
+      "feature": "tenure",
+      "value": -1.2816,
+      "shap": 0.6222,
+      "direction": "increases churn risk"
+    },
+    {
+      "feature": "Contract_Month-to-month",
+      "value": 1.0,
+      "shap": 0.4906,
+      "direction": "increases churn risk"
+    },
+    {
+      "feature": "charge_ratio",
+      "value": -0.034,
+      "shap": 0.4802,
+      "direction": "increases churn risk"
+    },
+    {
+      "feature": "InternetService_Fiber optic",
+      "value": 1.0,
+      "shap": 0.2839,
+      "direction": "increases churn risk"
+    },
+    {
+      "feature": "PaymentMethod_Electronic check",
+      "value": 1.0,
+      "shap": 0.2043,
+      "direction": "increases churn risk"
+    }
+  ],
+  "local_lime": [
+    [
+      "0.00 < Contract_Month-to-month <= 1.00",
+      0.2476188315407935
+    ],
+    [
+      "tenure <= -1.04",
+      0.14205889571361913
+    ],
+    [
+      "0.00 < InternetService_Fiber optic <= 1.00",
+      0.12678252275317647
+    ],
+    [
+      "Contract_Two year <= 0.00",
+      0.10597086256353658
+    ],
+    [
+      "0.00 < OnlineSecurity_No <= 1.00",
+      0.09242994944793544
+    ],
+    [
+      "charge_ratio > -0.03",
+      0.07840930004366464
+    ],
+    [
+      "MonthlyCharges > 0.73",
+      0.06660975526200422
+    ],
+    [
+      "0.00 < PaymentMethod_Electronic check <= 1.00",
+      0.059022516614603705
+    ]
+  ]
+}

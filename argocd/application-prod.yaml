@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: churn-api-prod
+  namespace: argocd
+  annotations:
+    notifications.argoproj.io/subscribe.on-sync-succeeded.telegram: "-1001234567890"
+    notifications.argoproj.io/subscribe.on-sync-failed.telegram: "-1001234567890"
+    notifications.argoproj.io/subscribe.on-health-degraded.telegram: "-1001234567890"
+  finalizers: [resources-finalizer.argocd.argoproj.io]
+spec:
+  project: churn
+  source:
+    repoURL: https://github.com/your-org/churn-mlops.git
+    targetRevision: main
+    path: k8s/overlays/prod        # image tag is bumped by CD only on release tags (v*)
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: churn
+  syncPolicy:
+    automated: {prune: true, selfHeal: true}
+    syncOptions: [CreateNamespace=true]
+    retry: {limit: 3, backoff: {duration: 10s, factor: 2, maxDuration: 3m}}

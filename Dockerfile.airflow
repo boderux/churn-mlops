@@ -1,0 +1,9 @@
+FROM apache/airflow:2.9.3-python3.11
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends curl libgomp1 git \
+    && rm -rf /var/lib/apt/lists/*
+USER airflow
+# Isolated venv for the ML stack (avoids dependency clashes with Airflow constraints)
+COPY --chown=airflow:root requirements.txt /tmp/requirements.txt
+RUN python -m venv /opt/airflow/venv && /opt/airflow/venv/bin/pip install --no-cache-dir -r /tmp/requirements.txt
+ENV ML_PYTHON=/opt/airflow/venv/bin/python

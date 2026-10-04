@@ -1,0 +1,91 @@
+groups:
+  - name: churn-api-availability
+    rules:
+      - alert: ChurnApiDown
+        expr: up{job="churn-api"} == 0
+        for: 1m
+        labels: {severity: critical}
+        annotations:
+          summary: "Churn API is down"
+          description: "Prometheus cannot scrape the API for more than 1 minute."
+
+      - alert: ModelNotLoaded
+        expr: churn_model_loaded == 0
+        for: 2m
+        labels: {severity: critical}
+        annotations:
+          summary: "No model loaded in the API"
+          description: "The API is up but has no champion model (run the training DAG)."
+
+      - alert: HighErrorRate
+        expr: |
+          sum(rate(churn_http_requests_total{status=~"5.."}[5m]))
+            / clamp_min(sum(rate(churn_http_requests_total[5m])), 1e-9) > 0.05
+        for: 5m
+        labels: {severity: critical}
+        annotations:
+          summary: "5xx error rate above 5%"
+          description: "Current 5xx ratio: {{ $value | humanizePercentage }}"
+
+      - alert: HighLatencyP95
+        expr: |
+          histogram_quantile(0.95,
+            sum by (le) (rate(churn_http_request_duration_seconds_bucket{path=~"/v1/.*"}[5m]))) > 0.5
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: "p95 latency above 500 ms"
+          description: "p95 = {{ $value | humanizeDuration }}"
+
+  - name: churn-model-quality
+    rules:
+      - alert: DataDriftDetected
+        expr: churn_data_drift_detected == 1
+        for: 1m
+        labels: {severity: warning}
+        annotations:
+          summary: "Evidently: dataset drift detected"
+          description: "Evidently flagged dataset drift. The retraining DAG is triggered automatically; see the drift report in artifacts/reports."
+
+      - alert: SevereDataDrift
+        expr: churn_data_drift_share > 0.5
+        for: 1m
+        labels: {severity: critical}
+        annotations:
+          summary: "More than 50% of features drifted"
+          description: "Drift share = {{ $value | humanizePercentage }}. Check upstream data sources."
+
+      - alert: DriftMonitorStale
+        expr: time() - churn_drift_last_run_timestamp > 7200
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: "Drift monitoring has not run for 2 hours"
+          description: "Check the churn_drift_monitoring Airflow DAG."
+
+      - alert: ChurnPredictionRateAnomaly
+        expr: |
+          sum(rate(churn_predictions_total{outcome="churn"}[30m]))
+            / clamp_min(sum(rate(churn_predictions_total[30m])), 1e-9) > 0.6
+          and sum(rate(churn_predictions_total[30m])) > 0
+        for: 15m
+        labels: {severity: warning}
+        annotations:
+          summary: "Predicted churn share above 60% (prediction drift?)"
+          description: "Share of 'churn' predictions: {{ $value | humanizePercentage }} (training base-rate ~27%)."
+
+      - alert: LowModelRocAuc
+        expr: churn_model_roc_auc < 0.75
+        for: 5m
+        labels: {severity: warning}
+        annotations:
+          summary: "Deployed model ROC-AUC below 0.75"
+          description: "Hold-out AUC = {{ $value }}"
+
+      - alert: ModelStale
+        expr: time() - churn_model_trained_timestamp_seconds > 14 * 86400
+        for: 1h
+        labels: {severity: warning}
+        annotations:
+          summary: "Model older than 14 days"
+          description: "The weekly training DAG may be failing."

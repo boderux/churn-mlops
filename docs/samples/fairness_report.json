@@ -1,0 +1,89 @@
+{
+  "model_version": "20261004004556",
+  "attributes": {
+    "gender": {
+      "baseline": {
+        "by_group": {
+          "Female": {
+            "selection_rate": 0.4163,
+            "tpr": 0.7824,
+            "fpr": 0.2733,
+            "accuracy": 0.7424
+          },
+          "Male": {
+            "selection_rate": 0.4197,
+            "tpr": 0.8232,
+            "fpr": 0.2847,
+            "accuracy": 0.7424
+          }
+        },
+        "demographic_parity_diff": 0.0034,
+        "equalized_odds_diff": 0.0408,
+        "disparate_impact_ratio": 0.992,
+        "passes_four_fifths_rule": true
+      },
+      "mitigated_equalized_odds": {
+        "by_group": {
+          "Female": {
+            "selection_rate": 0.3959,
+            "tpr": 0.772,
+            "fpr": 0.249,
+            "accuracy": 0.7569
+          },
+          "Male": {
+            "selection_rate": 0.4003,
+            "tpr": 0.8122,
+            "fpr": 0.2625,
+            "accuracy": 0.7562
+          }
+        },
+        "demographic_parity_diff": 0.0044,
+        "equalized_odds_diff": 0.0401,
+        "disparate_impact_ratio": 0.9891,
+        "passes_four_fifths_rule": true
+      }
+    },
+    "SeniorCitizen": {
+      "baseline": {
+        "by_group": {
+          "0": {
+            "selection_rate": 0.3732,
+            "tpr": 0.7681,
+            "fpr": 0.2536,
+            "accuracy": 0.7515
+          },
+          "1": {
+            "selection_rate": 0.6577,
+            "tpr": 0.898,
+            "fpr": 0.4677,
+            "accuracy": 0.6937
+          }
+        },
+        "demographic_parity_diff": 0.2844,
+        "equalized_odds_diff": 0.2142,
+        "disparate_impact_ratio": 0.5675,
+        "passes_four_fifths_rule": false
+      },
+      "mitigated_equalized_odds": {
+        "by_group": {
+          "0": {
+            "selection_rate": 0.3732,
+            "tpr": 0.721,
+            "fpr": 0.2678,
+            "accuracy": 0.7296
+          },
+          "1": {
+            "selection_rate": 0.527,
+            "tpr": 0.7347,
+            "fpr": 0.3629,
+            "accuracy": 0.6802
+          }
+        },
+        "demographic_parity_diff": 0.1538,
+        "equalized_odds_diff": 0.0951,
+        "disparate_impact_ratio": 0.7081,
+        "passes_four_fifths_rule": false
+      }
+    }
+  }
+}
