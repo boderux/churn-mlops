@@ -2,6 +2,7 @@ name: churn-mlops
 
 x-airflow-common: &airflow-common
   build: { context: ., dockerfile: Dockerfile.airflow }
+  image: churn-airflow:local
   environment: &airflow-env
     AIRFLOW__CORE__EXECUTOR: LocalExecutor
     AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW_WEBSERVER_SECRET_KEY}
