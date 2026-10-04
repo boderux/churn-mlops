@@ -18,11 +18,11 @@ from datetime import timedelta
 from pathlib import Path
 
 import pendulum
+
+from airflow import DAG
 from airflow.operators.bash import BashOperator
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import BranchPythonOperator, PythonOperator
-
-from airflow import DAG
 
 PROJECT = os.getenv("PROJECT_ROOT", "/opt/project")
 PY = os.getenv("ML_PYTHON", "/opt/airflow/venv/bin/python")
