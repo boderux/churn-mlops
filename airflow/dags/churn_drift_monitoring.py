@@ -15,12 +15,12 @@ import os
 from datetime import timedelta
 
 import pendulum
+
+from airflow import DAG
 from airflow.operators.bash import BashOperator
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import BranchPythonOperator
 from airflow.operators.trigger_dagrun import TriggerDagRunOperator
-
-from airflow import DAG
 
 PROJECT = os.getenv("PROJECT_ROOT", "/opt/project")
 PY = os.getenv("ML_PYTHON", "/opt/airflow/venv/bin/python")

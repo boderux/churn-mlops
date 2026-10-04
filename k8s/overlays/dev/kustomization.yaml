@@ -2,22 +2,26 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: churn-dev
 resources:
-  - ../../base
+- ../../base
 patches:
-  - target: {kind: Deployment, name: churn-api}
-    patch: |-
-      - op: replace
-        path: /spec/replicas
-        value: 1
-  - target: {kind: HorizontalPodAutoscaler, name: churn-api}
-    patch: |-
-      - op: replace
-        path: /spec/minReplicas
-        value: 1
-      - op: replace
-        path: /spec/maxReplicas
-        value: 2
+- patch: |-
+    - op: replace
+      path: /spec/replicas
+      value: 1
+  target:
+    kind: Deployment
+    name: churn-api
+- patch: |-
+    - op: replace
+      path: /spec/minReplicas
+      value: 1
+    - op: replace
+      path: /spec/maxReplicas
+      value: 2
+  target:
+    kind: HorizontalPodAutoscaler
+    name: churn-api
 images:
-  - name: churn-api
-    newName: ghcr.io/your-org/churn-api
-    newTag: latest   # updated automatically by .github/workflows/cd.yml
+- name: churn-api
+  newName: ghcr.io/boderux/churn-api
+  newTag: sha-94445b16
