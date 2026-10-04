@@ -6,8 +6,11 @@ name: CD
 #   tag  v*.*.*   -> image :tag  -> prod overlay  (auto-deployed by ArgoCD)
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
     branches: [main]
+    types: [completed]
+  push:
     tags: ["v*.*.*"]
   workflow_dispatch:
 
@@ -26,6 +29,7 @@ env:
 jobs:
   build-and-push:
     name: Build & Deploy Image (Self-Hosted)
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: [self-hosted, Windows]
     defaults:
       run:
@@ -35,6 +39,8 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
 
       - name: Add runner tools to PATH
         run: |
@@ -46,6 +52,8 @@ jobs:
         run: |
           if ($env:GITHUB_REF -like "refs/tags/*") {
             $tag = $env:GITHUB_REF_NAME
+          } elseif ("${{ github.event.workflow_run.head_sha }}") {
+            $tag = "sha-" + "${{ github.event.workflow_run.head_sha }}".Substring(0,8)
           } else {
             $tag = "sha-" + $env:GITHUB_SHA.Substring(0,8)
           }
@@ -103,6 +111,7 @@ jobs:
   bump-manifest:
     name: Bump Overlay & GitOps Sync
     needs: build-and-push
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: [self-hosted, Windows]
     defaults:
       run:
