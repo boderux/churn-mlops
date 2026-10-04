@@ -11,7 +11,3 @@ resources:
 labels:
   - pairs: {app.kubernetes.io/name: churn-api, app.kubernetes.io/part-of: churn-mlops}
     includeSelectors: false
-images:
-  - name: churn-api
-    newName: ghcr.io/your-org/churn-api
-    newTag: latest

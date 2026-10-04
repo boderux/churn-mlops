@@ -11,7 +11,7 @@ metadata:
 spec:
   project: churn
   source:
-    repoURL: https://github.com/your-org/churn-mlops.git
+    repoURL: https://github.com/Boderux/churn-mlops.git
     targetRevision: main
     path: k8s/overlays/prod        # image tag is bumped by CD only on release tags (v*)
   destination:

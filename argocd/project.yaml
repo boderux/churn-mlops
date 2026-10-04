@@ -6,7 +6,7 @@ metadata:
 spec:
   description: Churn MLOps project
   sourceRepos:
-    - https://github.com/your-org/churn-mlops.git
+    - https://github.com/Boderux/churn-mlops.git
   destinations:
     - {server: https://kubernetes.default.svc, namespace: churn}
     - {server: https://kubernetes.default.svc, namespace: churn-dev}

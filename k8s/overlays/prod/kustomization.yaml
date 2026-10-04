@@ -5,5 +5,5 @@ resources:
   - ../../base
 images:
   - name: churn-api
-    newName: ghcr.io/your-org/churn-api
+    newName: ghcr.io/boderux/churn-api
     newTag: latest   # pinned to a release tag by .github/workflows/cd.yml

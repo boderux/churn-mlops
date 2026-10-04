@@ -35,4 +35,16 @@ traffic-drift:   ## drifted traffic -> triggers Evidently + Telegram alert
 drift:           ## run the Evidently check manually
 	$(PY) -m churn.cli drift
 k8s-validate:    ## render manifests
-	kustomize build k8s/overlays/dev >/dev/null && kustomize build k8s/overlays/prod >/dev/null && echo OK
+	kubectl kustomize k8s/overlays/dev >/dev/null && kubectl kustomize k8s/overlays/prod >/dev/null && echo OK
+k8s-up:          ## start kind cluster + install ArgoCD & metrics-server
+	kind create cluster --config k8s/kind-config.yaml || true
+	kubectl apply --server-side --force-conflicts -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+	kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+	kubectl patch deployment metrics-server -n kube-system --type 'json' -p '[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--kubelet-insecure-tls"}]' || true
+	kubectl patch svc argocd-server -n argocd -p '{"spec": {"type": "NodePort", "ports": [{"name": "https", "port": 443, "targetPort": 8080, "nodePort": 30443}]}}' || true
+k8s-down:        ## delete kind cluster
+	kind delete cluster --name churn-cluster
+argocd-apps:     ## apply ArgoCD Project and Applications
+	kubectl apply -f argocd/project.yaml
+	kubectl apply -f argocd/application-dev.yaml
+	kubectl apply -f argocd/application-prod.yaml

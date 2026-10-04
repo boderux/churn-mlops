@@ -12,7 +12,7 @@ metadata:
 spec:
   project: churn
   source:
-    repoURL: https://github.com/your-org/churn-mlops.git
+    repoURL: https://github.com/Boderux/churn-mlops.git
     targetRevision: main
     path: k8s/overlays/dev
   destination:
