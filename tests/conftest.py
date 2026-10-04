@@ -20,12 +20,24 @@ from churn import data, evaluate, model_io, train  # noqa: E402
 from churn.config import CHAMPION_DIR, load_params  # noqa: E402
 
 SAMPLE_CUSTOMER = {
-    "SeniorCitizen": 0, "Partner": "Yes", "Dependents": "No", "tenure": 5,
-    "PhoneService": "Yes", "MultipleLines": "No", "InternetService": "Fiber optic",
-    "OnlineSecurity": "No", "OnlineBackup": "No", "DeviceProtection": "No",
-    "TechSupport": "No", "StreamingTV": "Yes", "StreamingMovies": "Yes",
-    "Contract": "Month-to-month", "PaperlessBilling": "Yes",
-    "PaymentMethod": "Electronic check", "MonthlyCharges": 89.1, "TotalCharges": 445.5,
+    "SeniorCitizen": 0,
+    "Partner": "Yes",
+    "Dependents": "No",
+    "tenure": 5,
+    "PhoneService": "Yes",
+    "MultipleLines": "No",
+    "InternetService": "Fiber optic",
+    "OnlineSecurity": "No",
+    "OnlineBackup": "No",
+    "DeviceProtection": "No",
+    "TechSupport": "No",
+    "StreamingTV": "Yes",
+    "StreamingMovies": "Yes",
+    "Contract": "Month-to-month",
+    "PaperlessBilling": "Yes",
+    "PaymentMethod": "Electronic check",
+    "MonthlyCharges": 89.1,
+    "TotalCharges": 445.5,
 }
 
 
@@ -61,6 +73,7 @@ def client(trained):
     from fastapi.testclient import TestClient
 
     from api.main import app
+
     with TestClient(app) as c:
         yield c
 

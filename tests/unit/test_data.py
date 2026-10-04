@@ -62,8 +62,10 @@ def test_ingest_uses_existing_file(params):
 
 
 def test_ingest_synthetic_fallback(params, tmp_path):
-    p = {**params, "data": {**params["data"], "raw_path": str(tmp_path / "x.csv"),
-                            "url": "http://127.0.0.1:9/none"}}
+    p = {
+        **params,
+        "data": {**params["data"], "raw_path": str(tmp_path / "x.csv"), "url": "http://127.0.0.1:9/none"},
+    }
     out = data.ingest(p)
     assert len(pd.read_csv(out)) > 1000
     p["data"]["allow_synthetic_fallback"] = False

@@ -1,6 +1,5 @@
-from unittest.mock import MagicMock, patch
 from pathlib import Path
-import pytest
+from unittest.mock import MagicMock, patch
 
 from churn import storage
 
@@ -41,8 +40,10 @@ def test_upload_and_download_file(tmp_path: Path):
     src.write_text("churn mlops")
     dest = tmp_path / "downloaded.txt"
 
-    with patch("churn.storage.get_s3_client") as mock_get_client, \
-         patch("churn.storage.ensure_bucket", return_value=True):
+    with (
+        patch("churn.storage.get_s3_client") as mock_get_client,
+        patch("churn.storage.ensure_bucket", return_value=True),
+    ):
         mock_client = MagicMock()
         mock_get_client.return_value = mock_client
 

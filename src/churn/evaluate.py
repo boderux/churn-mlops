@@ -28,8 +28,11 @@ def gate(params: dict[str, Any]) -> dict[str, Any]:
         if m["roc_auc"] < champ_auc - g["max_regression"]:
             reasons.append(f"regression vs champion: {m['roc_auc']:.3f} < {champ_auc:.3f}")
     decision = {
-        "promote": not reasons, "reasons": reasons, "candidate_auc": m["roc_auc"],
-        "champion_auc": champ_auc, "model_type": cand["model_type"],
+        "promote": not reasons,
+        "reasons": reasons,
+        "candidate_auc": m["roc_auc"],
+        "champion_auc": champ_auc,
+        "model_type": cand["model_type"],
         "version": cand["version"],
     }
     (ARTIFACT_DIR / "gate_decision.json").write_text(json.dumps(decision, indent=2))

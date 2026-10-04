@@ -42,6 +42,7 @@ def test_split_has_no_leakage_and_is_stratified(trained, params):
 
 def test_real_dataset_passes_validation_if_downloaded():
     from churn.config import ROOT
+
     f = ROOT / "data" / "raw" / "telco_churn.csv"
     if f.exists():
         assert data.validate(data.clean(pd.read_csv(f))) == []

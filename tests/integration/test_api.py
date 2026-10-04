@@ -28,9 +28,15 @@ def test_predict_batch(client, customer):
     assert r.status_code == 200 and len(r.json()["predictions"]) == 2
 
 
-@pytest.mark.parametrize("patch", [
-    {"tenure": -1}, {"Contract": "Weekly"}, {"MonthlyCharges": 1e6}, {"gender": "Male"},
-])
+@pytest.mark.parametrize(
+    "patch",
+    [
+        {"tenure": -1},
+        {"Contract": "Weekly"},
+        {"MonthlyCharges": 1e6},
+        {"gender": "Male"},
+    ],
+)
 def test_predict_validation_errors(client, customer, patch):
     assert client.post("/v1/predict", json={**customer, **patch}).status_code == 422
 
@@ -59,8 +65,13 @@ def test_model_info(client):
 def test_metrics_endpoint(client, customer):
     client.post("/v1/predict", json=customer)
     text = client.get("/metrics").text
-    for name in ["churn_http_requests_total", "churn_predictions_total", "churn_model_roc_auc",
-                 "churn_http_request_duration_seconds_bucket", "churn_model_loaded 1.0"]:
+    for name in [
+        "churn_http_requests_total",
+        "churn_predictions_total",
+        "churn_model_roc_auc",
+        "churn_http_request_duration_seconds_bucket",
+        "churn_model_loaded 1.0",
+    ]:
         assert name in text
 
 
@@ -99,5 +110,6 @@ def test_inference_failure_returns_500(client, customer, monkeypatch):
     class Boom:
         def predict_proba(self, _):
             raise RuntimeError("boom")
+
     monkeypatch.setattr(store, "pipe", Boom())
     assert client.post("/v1/predict", json=customer).status_code == 500

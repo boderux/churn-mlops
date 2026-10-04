@@ -126,9 +126,15 @@ def _predict(customers: list[Customer]) -> list[Prediction]:
         m.PROBABILITY.observe(p)
         m.PREDICTIONS.labels("churn" if p >= thr else "stay").inc()
         log_prediction(row, p, rid)
-        out.append(Prediction(churn_probability=round(p, 4), churn=p >= thr,
-                              risk_level=risk_level(p), model_version=s.meta["version"],
-                              request_id=rid))
+        out.append(
+            Prediction(
+                churn_probability=round(p, 4),
+                churn=p >= thr,
+                risk_level=risk_level(p),
+                model_version=s.meta["version"],
+                request_id=rid,
+            )
+        )
     return out
 
 
@@ -139,9 +145,11 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(
-    title="Telco Churn Prediction API", version=__version__, lifespan=lifespan,
+    title="Telco Churn Prediction API",
+    version=__version__,
+    lifespan=lifespan,
     description="Predict customer churn probability, explain predictions (SHAP) and "
-                "expose Prometheus metrics. Part of the DDM501 end-to-end MLOps project.",
+    "expose Prometheus metrics. Part of the DDM501 end-to-end MLOps project.",
     responses={503: {"model": ErrorResponse}, 500: {"model": ErrorResponse}},
 )
 
@@ -206,9 +214,14 @@ def explain(customer: Customer, top_k: int = 5) -> Explanation:
 @app.get("/v1/model", response_model=ModelInfo, tags=["model"])
 def model_info() -> ModelInfo:
     s = _require_model()
-    return ModelInfo(version=s.meta["version"], model_type=s.meta["model_type"],
-                     trained_at=s.meta["trained_at"], metrics=s.meta["metrics"],
-                     git_sha=s.meta.get("git_sha", "unknown"), threshold=s.meta["threshold"])
+    return ModelInfo(
+        version=s.meta["version"],
+        model_type=s.meta["model_type"],
+        trained_at=s.meta["trained_at"],
+        metrics=s.meta["metrics"],
+        git_sha=s.meta.get("git_sha", "unknown"),
+        threshold=s.meta["threshold"],
+    )
 
 
 def admin_auth(x_admin_token: str | None = Header(default=None)) -> None:

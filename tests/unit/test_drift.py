@@ -46,14 +46,16 @@ def test_run_writes_report_and_alerts(params, ref):
     res = drift.run(params, current=_shift(ref))
     assert (ARTIFACT_DIR / "reports" / "drift_report.html").exists()
     assert res["dataset_drift"] is True
-    assert drift.alert_if_drift(res) is False   # no token configured -> only logged
+    assert drift.alert_if_drift(res) is False  # no token configured -> only logged
     assert drift.alert_if_drift({"dataset_drift": False}) is False
 
 
 def test_load_current_from_log(params, tmp_path, ref):
     f = tmp_path / "log.jsonl"
-    rec = {"features": {**ref.iloc[0].drop("churn_probability").to_dict(), "SeniorCitizen": 0},
-           "probability": 0.4}
+    rec = {
+        "features": {**ref.iloc[0].drop("churn_probability").to_dict(), "SeniorCitizen": 0},
+        "probability": 0.4,
+    }
     f.write_text(json.dumps(rec) + "\nnot-json\n")
     p = {**params, "monitoring": {**params["monitoring"], "prediction_log": str(f)}}
     df = drift.load_current(p)
@@ -65,8 +67,9 @@ def test_load_current_from_log(params, tmp_path, ref):
 def test_push_metrics_called(monkeypatch):
     called = {}
     monkeypatch.setattr(drift, "push_to_gateway", lambda url, **kw: called.update(url=url, **kw))
-    drift.push_metrics({"share_drifted": .5, "dataset_drift": True, "n_drifted": 3, "n_current": 200},
-                       "http://pg:9091")
+    drift.push_metrics(
+        {"share_drifted": 0.5, "dataset_drift": True, "n_drifted": 3, "n_current": 200}, "http://pg:9091"
+    )
     assert called["job"] == "churn_drift_monitor"
 
 

@@ -30,8 +30,9 @@ def test_telegram_failure_never_raises(monkeypatch):
 
 def _write_candidate(auc, recall=0.8):
     ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
-    (ARTIFACT_DIR / "candidate_metrics.json").write_text(json.dumps({
-        "metrics": {"roc_auc": auc, "recall": recall}, "model_type": "t", "version": "v"}))
+    (ARTIFACT_DIR / "candidate_metrics.json").write_text(
+        json.dumps({"metrics": {"roc_auc": auc, "recall": recall}, "model_type": "t", "version": "v"})
+    )
 
 
 def test_gate_rejects_low_auc(params, trained):

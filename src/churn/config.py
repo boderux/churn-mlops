@@ -14,14 +14,33 @@ CHAMPION_DIR = ARTIFACT_DIR / "champion"
 
 NUMERIC_COLS = ["tenure", "MonthlyCharges", "TotalCharges"]
 CATEGORICAL_COLS = [
-    "gender", "SeniorCitizen", "Partner", "Dependents", "PhoneService", "MultipleLines",
-    "InternetService", "OnlineSecurity", "OnlineBackup", "DeviceProtection", "TechSupport",
-    "StreamingTV", "StreamingMovies", "Contract", "PaperlessBilling", "PaymentMethod",
+    "gender",
+    "SeniorCitizen",
+    "Partner",
+    "Dependents",
+    "PhoneService",
+    "MultipleLines",
+    "InternetService",
+    "OnlineSecurity",
+    "OnlineBackup",
+    "DeviceProtection",
+    "TechSupport",
+    "StreamingTV",
+    "StreamingMovies",
+    "Contract",
+    "PaperlessBilling",
+    "PaymentMethod",
 ]
 RAW_FEATURES = NUMERIC_COLS + CATEGORICAL_COLS
 SERVICE_COLS = [
-    "PhoneService", "MultipleLines", "OnlineSecurity", "OnlineBackup",
-    "DeviceProtection", "TechSupport", "StreamingTV", "StreamingMovies",
+    "PhoneService",
+    "MultipleLines",
+    "OnlineSecurity",
+    "OnlineBackup",
+    "DeviceProtection",
+    "TechSupport",
+    "StreamingTV",
+    "StreamingMovies",
 ]
 
 

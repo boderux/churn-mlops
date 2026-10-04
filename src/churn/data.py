@@ -33,35 +33,50 @@ def generate_synthetic(n: int = 3000, seed: int = 0) -> pd.DataFrame:
     tenure = rng.integers(0, 73, n)
     contract = rng.choice(["Month-to-month", "One year", "Two year"], n, p=[0.55, 0.21, 0.24])
     internet = rng.choice(["DSL", "Fiber optic", "No"], n, p=[0.34, 0.44, 0.22])
-    df = pd.DataFrame({
-        "customerID": [f"C{i:05d}" for i in range(n)],
-        "gender": rng.choice(["Male", "Female"], n),
-        "SeniorCitizen": rng.choice([0, 1], n, p=[0.84, 0.16]),
-        "Partner": rng.choice(["Yes", "No"], n),
-        "Dependents": rng.choice(["Yes", "No"], n, p=[0.3, 0.7]),
-        "tenure": tenure,
-        "PhoneService": rng.choice(["Yes", "No"], n, p=[0.9, 0.1]),
-        "InternetService": internet,
-        "Contract": contract,
-        "PaperlessBilling": rng.choice(["Yes", "No"], n, p=[0.6, 0.4]),
-        "PaymentMethod": rng.choice(
-            ["Electronic check", "Mailed check", "Bank transfer (automatic)",
-             "Credit card (automatic)"], n),
-    })
-    for col in ["OnlineSecurity", "OnlineBackup", "DeviceProtection", "TechSupport",
-                "StreamingTV", "StreamingMovies"]:
-        df[col] = np.where(df["InternetService"] == "No", "No internet service",
-                           rng.choice(["Yes", "No"], n))
-    df["MultipleLines"] = np.where(df["PhoneService"] == "No", "No phone service",
-                                   rng.choice(["Yes", "No"], n))
+    df = pd.DataFrame(
+        {
+            "customerID": [f"C{i:05d}" for i in range(n)],
+            "gender": rng.choice(["Male", "Female"], n),
+            "SeniorCitizen": rng.choice([0, 1], n, p=[0.84, 0.16]),
+            "Partner": rng.choice(["Yes", "No"], n),
+            "Dependents": rng.choice(["Yes", "No"], n, p=[0.3, 0.7]),
+            "tenure": tenure,
+            "PhoneService": rng.choice(["Yes", "No"], n, p=[0.9, 0.1]),
+            "InternetService": internet,
+            "Contract": contract,
+            "PaperlessBilling": rng.choice(["Yes", "No"], n, p=[0.6, 0.4]),
+            "PaymentMethod": rng.choice(
+                ["Electronic check", "Mailed check", "Bank transfer (automatic)", "Credit card (automatic)"],
+                n,
+            ),
+        }
+    )
+    for col in [
+        "OnlineSecurity",
+        "OnlineBackup",
+        "DeviceProtection",
+        "TechSupport",
+        "StreamingTV",
+        "StreamingMovies",
+    ]:
+        df[col] = np.where(df["InternetService"] == "No", "No internet service", rng.choice(["Yes", "No"], n))
+    df["MultipleLines"] = np.where(
+        df["PhoneService"] == "No", "No phone service", rng.choice(["Yes", "No"], n)
+    )
     base = 20 + 35 * (internet != "No") + 25 * (internet == "Fiber optic")
     df["MonthlyCharges"] = np.round(base + rng.normal(0, 6, n).clip(-10, 15), 2)
     df["TotalCharges"] = np.round(df["MonthlyCharges"] * tenure, 2)
-    logit = (-1.0 + 1.4 * (contract == "Month-to-month") - 1.1 * (contract == "Two year")
-             + 0.7 * (internet == "Fiber optic") - 0.035 * tenure
-             + 0.4 * (df["PaymentMethod"] == "Electronic check")
-             + 0.25 * df["SeniorCitizen"] - 0.5 * (df["TechSupport"] == "Yes")
-             + rng.normal(0, 0.6, n))
+    logit = (
+        -1.0
+        + 1.4 * (contract == "Month-to-month")
+        - 1.1 * (contract == "Two year")
+        + 0.7 * (internet == "Fiber optic")
+        - 0.035 * tenure
+        + 0.4 * (df["PaymentMethod"] == "Electronic check")
+        + 0.25 * df["SeniorCitizen"]
+        - 0.5 * (df["TechSupport"] == "Yes")
+        + rng.normal(0, 0.6, n)
+    )
     df["Churn"] = np.where(rng.random(n) < 1 / (1 + np.exp(-logit)), "Yes", "No")
     return df
 
@@ -134,8 +149,8 @@ def validate(df: pd.DataFrame, target: str | None = "Churn") -> list[str]:
 def split(df: pd.DataFrame, params: dict[str, Any]) -> tuple[pd.DataFrame, pd.DataFrame]:
     cfg = params["data"]
     train, test = train_test_split(
-        df, test_size=cfg["test_size"], random_state=cfg["random_state"],
-        stratify=df[cfg["target"]])
+        df, test_size=cfg["test_size"], random_state=cfg["random_state"], stratify=df[cfg["target"]]
+    )
     return train.reset_index(drop=True), test.reset_index(drop=True)
 
 
@@ -154,6 +169,7 @@ def preprocess(params: dict[str, Any]) -> dict[str, Path]:
     log.info("train=%d test=%d", len(train), len(test))
     try:
         from churn.storage import sync_data_to_minio
+
         sync_data_to_minio(params)
     except Exception as exc:  # noqa: BLE001
         log.debug("Data sync to MinIO skipped: %s", exc)

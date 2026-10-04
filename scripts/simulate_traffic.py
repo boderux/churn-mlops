@@ -1,7 +1,7 @@
 """Send synthetic customers to the API (to populate dashboards and the Evidently window).
 
-    python scripts/simulate_traffic.py --n 300                # healthy traffic
-    python scripts/simulate_traffic.py --n 300 --drift        # shifted population -> drift alert
+python scripts/simulate_traffic.py --n 300                # healthy traffic
+python scripts/simulate_traffic.py --n 300 --drift        # shifted population -> drift alert
 """
 
 from __future__ import annotations
@@ -18,10 +18,26 @@ import requests
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from churn.data import generate_synthetic  # noqa: E402
 
-FIELDS = ["SeniorCitizen", "Partner", "Dependents", "tenure", "PhoneService", "MultipleLines",
-          "InternetService", "OnlineSecurity", "OnlineBackup", "DeviceProtection", "TechSupport",
-          "StreamingTV", "StreamingMovies", "Contract", "PaperlessBilling", "PaymentMethod",
-          "MonthlyCharges", "TotalCharges"]
+FIELDS = [
+    "SeniorCitizen",
+    "Partner",
+    "Dependents",
+    "tenure",
+    "PhoneService",
+    "MultipleLines",
+    "InternetService",
+    "OnlineSecurity",
+    "OnlineBackup",
+    "DeviceProtection",
+    "TechSupport",
+    "StreamingTV",
+    "StreamingMovies",
+    "Contract",
+    "PaperlessBilling",
+    "PaymentMethod",
+    "MonthlyCharges",
+    "TotalCharges",
+]
 
 
 def base_population(n: int, seed: int) -> pd.DataFrame:

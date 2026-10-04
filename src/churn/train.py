@@ -21,8 +21,14 @@ import pandas as pd  # noqa: E402
 from sklearn.ensemble import RandomForestClassifier  # noqa: E402
 from sklearn.linear_model import LogisticRegression  # noqa: E402
 from sklearn.metrics import (  # noqa: E402
-    ConfusionMatrixDisplay, RocCurveDisplay, accuracy_score, average_precision_score,
-    f1_score, precision_score, recall_score, roc_auc_score,
+    ConfusionMatrixDisplay,
+    RocCurveDisplay,
+    accuracy_score,
+    average_precision_score,
+    f1_score,
+    precision_score,
+    recall_score,
+    roc_auc_score,
 )
 from sklearn.model_selection import RandomizedSearchCV, StratifiedKFold  # noqa: E402
 from sklearn.pipeline import Pipeline  # noqa: E402
@@ -30,7 +36,10 @@ from xgboost import XGBClassifier  # noqa: E402
 
 from churn.config import ARTIFACT_DIR, RAW_FEATURES, resolve  # noqa: E402
 from churn.features import (  # noqa: E402
-    ENGINEERED_CAT, ENGINEERED_NUM, build_preprocessor, feature_engineering_step,
+    ENGINEERED_CAT,
+    ENGINEERED_NUM,
+    build_preprocessor,
+    feature_engineering_step,
 )
 from churn.model_io import save_bundle  # noqa: E402
 
@@ -48,26 +57,43 @@ def get_search_spaces(pos_weight: float) -> dict[str, tuple[Any, dict[str, list[
     return {
         "logreg": (
             LogisticRegression(max_iter=2000, class_weight="balanced"),
-            {"clf__C": [0.01, 0.1, 0.5, 1, 5, 10]}),
+            {"clf__C": [0.01, 0.1, 0.5, 1, 5, 10]},
+        ),
         "random_forest": (
             RandomForestClassifier(class_weight="balanced_subsample", random_state=42, n_jobs=-1),
-            {"clf__n_estimators": [150, 300], "clf__max_depth": [6, 10, 16, None],
-             "clf__min_samples_leaf": [1, 5, 10]}),
+            {
+                "clf__n_estimators": [150, 300],
+                "clf__max_depth": [6, 10, 16, None],
+                "clf__min_samples_leaf": [1, 5, 10],
+            },
+        ),
         "xgboost": (
-            XGBClassifier(eval_metric="logloss", scale_pos_weight=pos_weight,
-                          random_state=42, n_jobs=2, tree_method="hist"),
-            {"clf__n_estimators": [100, 200, 300], "clf__max_depth": [2, 3, 4, 6],
-             "clf__learning_rate": [0.03, 0.05, 0.1], "clf__subsample": [0.7, 0.9, 1.0],
-             "clf__colsample_bytree": [0.7, 0.9, 1.0]}),
+            XGBClassifier(
+                eval_metric="logloss",
+                scale_pos_weight=pos_weight,
+                random_state=42,
+                n_jobs=2,
+                tree_method="hist",
+            ),
+            {
+                "clf__n_estimators": [100, 200, 300],
+                "clf__max_depth": [2, 3, 4, 6],
+                "clf__learning_rate": [0.03, 0.05, 0.1],
+                "clf__subsample": [0.7, 0.9, 1.0],
+                "clf__colsample_bytree": [0.7, 0.9, 1.0],
+            },
+        ),
     }
 
 
 def make_pipeline(clf: Any, drop: list[str]) -> Pipeline:
-    return Pipeline([
-        ("fe", feature_engineering_step()),
-        ("prep", build_preprocessor(drop)),
-        ("clf", clf),
-    ])
+    return Pipeline(
+        [
+            ("fe", feature_engineering_step()),
+            ("prep", build_preprocessor(drop)),
+            ("clf", clf),
+        ]
+    )
 
 
 def compute_metrics(y_true: np.ndarray, proba: np.ndarray, thr: float = THRESHOLD) -> dict[str, float]:
@@ -102,8 +128,8 @@ def _git_sha() -> str:
         return os.environ["GIT_SHA"]
     try:
         return subprocess.check_output(
-            ["git", "rev-parse", "--short", "HEAD"], stderr=subprocess.DEVNULL,
-            cwd=resolve("."), text=True).strip()
+            ["git", "rev-parse", "--short", "HEAD"], stderr=subprocess.DEVNULL, cwd=resolve("."), text=True
+        ).strip()
     except Exception:  # noqa: BLE001
         return "unknown"
 
@@ -132,17 +158,28 @@ def train(params: dict[str, Any], quick: bool = False) -> dict[str, Any]:
     best_name, best_cv, best_pipe = "", -1.0, None
     with mlflow.start_run(run_name=f"train-{time.strftime('%Y%m%d-%H%M%S')}") as parent:
         mlflow.set_tags({"git_sha": _git_sha(), "stage": "training"})
-        mlflow.log_params({"n_train": len(y_tr), "n_test": len(y_te),
-                           "churn_rate": round(float(y_tr.mean()), 4),
-                           "dropped_features": ",".join(drop)})
+        mlflow.log_params(
+            {
+                "n_train": len(y_tr),
+                "n_test": len(y_te),
+                "churn_rate": round(float(y_tr.mean()), 4),
+                "dropped_features": ",".join(drop),
+            }
+        )
         for name, (clf, space) in get_search_spaces(pos_weight).items():
             if name not in tcfg["models"]:
                 continue
             with mlflow.start_run(run_name=name, nested=True):
                 search = RandomizedSearchCV(
-                    make_pipeline(clf, drop), space, n_iter=min(n_iter, int(np.prod(
-                        [len(v) for v in space.values()]))), cv=cv,
-                    scoring=tcfg["scoring"], n_jobs=1, random_state=42, refit=True)
+                    make_pipeline(clf, drop),
+                    space,
+                    n_iter=min(n_iter, int(np.prod([len(v) for v in space.values()]))),
+                    cv=cv,
+                    scoring=tcfg["scoring"],
+                    n_jobs=1,
+                    random_state=42,
+                    refit=True,
+                )
                 t0 = time.time()
                 search.fit(X_tr_model, y_tr)
                 fit_s = time.time() - t0
@@ -168,11 +205,15 @@ def train(params: dict[str, Any], quick: bool = False) -> dict[str, Any]:
     reference = train_df[feats].sample(min(2000, len(train_df)), random_state=42).reset_index(drop=True)
     meta = {
         "version": time.strftime("%Y%m%d%H%M%S"),
-        "model_type": best_name, "trained_at": time.time(), "git_sha": _git_sha(),
-        "mlflow_run_id": parent.info.run_id, "metrics": best["metrics"],
+        "model_type": best_name,
+        "trained_at": time.time(),
+        "git_sha": _git_sha(),
+        "mlflow_run_id": parent.info.run_id,
+        "metrics": best["metrics"],
         "params": {k: str(v) for k, v in best["params"].items()},
         "all_candidates": {k: v["metrics"] for k, v in results.items()},
-        "feature_columns": feats, "threshold": THRESHOLD,
+        "feature_columns": feats,
+        "threshold": THRESHOLD,
         "engineered": ENGINEERED_NUM + ENGINEERED_CAT,
     }
     save_bundle(CANDIDATE_DIR, best_pipe, meta, reference)

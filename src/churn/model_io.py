@@ -14,8 +14,9 @@ from sklearn.pipeline import Pipeline
 from churn.config import CHAMPION_DIR
 
 
-def save_bundle(directory: Path, pipe: Pipeline, metadata: dict[str, Any],
-                reference: pd.DataFrame | None = None) -> None:
+def save_bundle(
+    directory: Path, pipe: Pipeline, metadata: dict[str, Any], reference: pd.DataFrame | None = None
+) -> None:
     directory.mkdir(parents=True, exist_ok=True)
     joblib.dump(pipe, directory / "model.joblib")
     (directory / "metadata.json").write_text(json.dumps(metadata, indent=2, default=str))

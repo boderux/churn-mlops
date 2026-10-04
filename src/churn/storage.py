@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 from typing import Any
 
-from churn.config import ARTIFACT_DIR, CHAMPION_DIR, ROOT, resolve
+from churn.config import ARTIFACT_DIR, CHAMPION_DIR, resolve
 
 log = logging.getLogger(__name__)
 

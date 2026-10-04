@@ -1,6 +1,6 @@
 """Command line entry-point used by Airflow, Make, CI and humans.
 
-    python -m churn.cli <ingest|validate|preprocess|train|gate|promote|fairness|explain|drift|run-all>
+python -m churn.cli <ingest|validate|preprocess|train|gate|promote|fairness|explain|drift|run-all>
 """
 
 from __future__ import annotations
@@ -32,22 +32,43 @@ def cmd_promote(params) -> int:
     decision = json.loads((ARTIFACT_DIR / "gate_decision.json").read_text())
     if not decision["promote"]:
         log.warning("Candidate rejected: %s", decision["reasons"])
-        send_telegram(f"Candidate <b>{decision['model_type']}</b> rejected:\n"
-                      + "\n".join(f"• {r}" for r in decision["reasons"]), "warning")
+        send_telegram(
+            f"Candidate <b>{decision['model_type']}</b> rejected:\n"
+            + "\n".join(f"• {r}" for r in decision["reasons"]),
+            "warning",
+        )
         return 0
     model_io.promote(train.CANDIDATE_DIR, CHAMPION_DIR)
     storage.sync_artifacts_to_minio()
     send_telegram(
         f"New champion <b>{decision['model_type']}</b> v{decision['version']}\n"
-        f"ROC-AUC {decision['candidate_auc']:.3f} (prev: {decision['champion_auc']})", "ok")
+        f"ROC-AUC {decision['candidate_auc']:.3f} (prev: {decision['champion_auc']})",
+        "ok",
+    )
     return 0
 
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="churn")
-    ap.add_argument("command", choices=["ingest", "validate", "preprocess", "train", "gate",
-                                        "promote", "fairness", "explain", "drift", "run-all",
-                                        "sync-data", "sync-reports", "sync-artifacts", "sync-all"])
+    ap.add_argument(
+        "command",
+        choices=[
+            "ingest",
+            "validate",
+            "preprocess",
+            "train",
+            "gate",
+            "promote",
+            "fairness",
+            "explain",
+            "drift",
+            "run-all",
+            "sync-data",
+            "sync-reports",
+            "sync-artifacts",
+            "sync-all",
+        ],
+    )
     ap.add_argument("--quick", action="store_true", help="fast training (CI / smoke tests)")
     ap.add_argument("--params", default=None)
     args = ap.parse_args(argv)

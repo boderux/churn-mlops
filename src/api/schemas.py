@@ -13,13 +13,33 @@ YesNoNoInternet = Literal["Yes", "No", "No internet service"]
 class Customer(BaseModel):
     """One customer. NOTE: `gender` is intentionally NOT collected (data minimisation)."""
 
-    model_config = ConfigDict(extra="forbid", json_schema_extra={"examples": [{
-        "SeniorCitizen": 0, "Partner": "Yes", "Dependents": "No", "tenure": 5,
-        "PhoneService": "Yes", "MultipleLines": "No", "InternetService": "Fiber optic",
-        "OnlineSecurity": "No", "OnlineBackup": "No", "DeviceProtection": "No",
-        "TechSupport": "No", "StreamingTV": "Yes", "StreamingMovies": "Yes",
-        "Contract": "Month-to-month", "PaperlessBilling": "Yes",
-        "PaymentMethod": "Electronic check", "MonthlyCharges": 89.1, "TotalCharges": 445.5}]})
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={
+            "examples": [
+                {
+                    "SeniorCitizen": 0,
+                    "Partner": "Yes",
+                    "Dependents": "No",
+                    "tenure": 5,
+                    "PhoneService": "Yes",
+                    "MultipleLines": "No",
+                    "InternetService": "Fiber optic",
+                    "OnlineSecurity": "No",
+                    "OnlineBackup": "No",
+                    "DeviceProtection": "No",
+                    "TechSupport": "No",
+                    "StreamingTV": "Yes",
+                    "StreamingMovies": "Yes",
+                    "Contract": "Month-to-month",
+                    "PaperlessBilling": "Yes",
+                    "PaymentMethod": "Electronic check",
+                    "MonthlyCharges": 89.1,
+                    "TotalCharges": 445.5,
+                }
+            ]
+        },
+    )
 
     SeniorCitizen: Literal[0, 1]
     Partner: YesNo
@@ -36,8 +56,9 @@ class Customer(BaseModel):
     StreamingMovies: YesNoNoInternet
     Contract: Literal["Month-to-month", "One year", "Two year"]
     PaperlessBilling: YesNo
-    PaymentMethod: Literal["Electronic check", "Mailed check",
-                           "Bank transfer (automatic)", "Credit card (automatic)"]
+    PaymentMethod: Literal[
+        "Electronic check", "Mailed check", "Bank transfer (automatic)", "Credit card (automatic)"
+    ]
     MonthlyCharges: float = Field(ge=0, le=200)
     TotalCharges: float = Field(ge=0, le=15000)
 

@@ -40,12 +40,14 @@ def load_current(params: dict[str, Any]) -> pd.DataFrame:
     return df
 
 
-def compute_drift(reference: pd.DataFrame, current: pd.DataFrame,
-                  threshold: float) -> tuple[dict[str, Any], Report]:
+def compute_drift(
+    reference: pd.DataFrame, current: pd.DataFrame, threshold: float
+) -> tuple[dict[str, Any], Report]:
     cols = [c for c in reference.columns if c in current.columns]
     mapping = ColumnMapping(
         numerical_features=[c for c in cols if c in NUMERIC_COLS or c == "churn_probability"],
-        categorical_features=[c for c in cols if c in CATEGORICAL_COLS])
+        categorical_features=[c for c in cols if c in CATEGORICAL_COLS],
+    )
     report = Report(metrics=[DataDriftPreset(drift_share=threshold)])
     report.run(reference_data=reference[cols], current_data=current[cols], column_mapping=mapping)
     res = report.as_dict()["metrics"]
@@ -58,7 +60,8 @@ def compute_drift(reference: pd.DataFrame, current: pd.DataFrame,
         "n_drifted": int(summary["number_of_drifted_columns"]),
         "n_columns": int(summary["number_of_columns"]),
         "drifted_columns": drifted,
-        "n_reference": len(reference), "n_current": len(current),
+        "n_reference": len(reference),
+        "n_current": len(current),
     }, report
 
 
@@ -95,6 +98,7 @@ def run(params: dict[str, Any], current: pd.DataFrame | None = None) -> dict[str
     (out / "drift_summary.json").write_text(json.dumps(result, indent=2))
     try:
         from churn.storage import sync_reports_to_minio
+
         sync_reports_to_minio()
     except Exception as exc:  # noqa: BLE001
         log.debug("Report sync to MinIO skipped: %s", exc)
@@ -117,4 +121,5 @@ def alert_if_drift(result: dict[str, Any]) -> bool:
         f"<b>Data drift detected</b>\nDrifted columns: {result['n_drifted']}/{result['n_columns']} "
         f"({result['share_drifted']:.0%})\nTop: <code>{cols}</code>\n"
         f"Window: {result['n_current']} requests\n➡️ Retraining pipeline triggered.",
-        level="warning")
+        level="warning",
+    )
